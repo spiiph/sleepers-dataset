@@ -8,7 +8,7 @@ from os.path import join
 from dataset import patches, mask
 
 
-LOG_LEVELS = list(logging._nameToLevel.keys())[:-1] # pylint: disable=protected-access
+LOG_LEVELS = list(logging._nameToLevel.keys())[:-1]  # pylint: disable=protected-access
 
 
 def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
@@ -101,7 +101,7 @@ def main() -> None:
 
     log_level = Argument(
         args=["--log-level", "-l"],
-        kwargs= {
+        kwargs={
             "type": str,
             "choices": LOG_LEVELS,
             "default": "INFO"

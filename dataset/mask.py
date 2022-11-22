@@ -1,6 +1,6 @@
 import logging
 
-import cv2 # type: ignore
+import cv2  # type: ignore
 import numpy as np
 
 from PIL import Image
@@ -28,7 +28,6 @@ class Mask:
         self._contours: list[np.ndarray] | None = None
         self._norm: np.ndarray
 
-
     def _load_data(self) -> np.ndarray:
         """
         Load the image data for the mask and construct the image norm
@@ -43,7 +42,6 @@ class Mask:
             self._norm = np.array([self._data.shape[1], self._data.shape[0]])
 
         return self._data
-
 
     def to_contours(self, normalize: bool = True) -> list[np.ndarray]:
         """
@@ -65,7 +63,6 @@ class Mask:
             return [contour / self._norm for contour in self._contours]
 
         return self._contours
-
 
     def to_polygons(self, normalize: bool = True) -> list[list[int | float]]:
         """

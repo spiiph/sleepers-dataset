@@ -43,8 +43,7 @@ Issues = "https://github.com/spiiph/sleepers-dataset/issues"
 Source = "https://github.com/spiiph/sleepers-dataset"
 
 [project.scripts]
-hello-world = "dataset.console:hello_world"
-create-patches = "dataset.console:create_patches"
+dataset = "dataset.console:main"
 
 [tool.hatch.version]
 path = "dataset/__about__.py"

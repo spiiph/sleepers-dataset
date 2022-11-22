@@ -29,7 +29,6 @@ class Patches:
         self.image_path: str = image_path
         self.mask_path: str | None = mask_path
 
-
     def write_patches(self, dest_path: str, splits: int = 8, store_empty: bool = False) -> None:
         """
         Split image and corresponding mask into patches and store the result
@@ -78,12 +77,10 @@ class Patches:
                 logger.debug(f"Writing patch {idx} for {self.mask_path}")
                 self._write_patch(join(dest_path, "masks", patch_filename), mask_patch)
 
-
     @staticmethod
     def _write_patch(path: str, patch: Image.Image) -> None:
         logger.debug(f"Patch size is {patch.width} x {patch.height} and mode is {patch.mode}")
         patch.save(path)
-
 
     @staticmethod
     def _split_image(image: Image.Image, splits: int) -> tuple[list[Image.Image], list[bool]]:
@@ -109,6 +106,6 @@ class Patches:
         # For palette mode images, the palette needs to be set explicitly from the original
         if image.mode == "P":
             for patch in patches:
-                patch.putpalette(image.getpalette()) # type: ignore
+                patch.putpalette(image.getpalette())  # type: ignore
 
         return patches, is_empty

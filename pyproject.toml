@@ -33,6 +33,8 @@ dynamic = ["version"]
 tests = [
   "pylint",
   "mypy",
+  "flake8",
+  "flake8-pyproject",
   "pytest",
   "pytest-cov"
 ]
@@ -52,6 +54,8 @@ path = "dataset/__about__.py"
 dependencies = [
   "pylint",
   "mypy",
+  "flake8",
+  "flake8-pyproject",
   "pytest",
   "pytest-cov",
 ]
@@ -61,6 +65,10 @@ no-cov = "cov --no-cov {args}"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["37", "38", "39", "310", "311"]
+
+[tool.flake8]
+max-line-length = 100
+count = true
 
 [tool.coverage.run]
 branch = true

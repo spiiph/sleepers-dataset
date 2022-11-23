@@ -29,23 +29,23 @@ class Patches:
         self.image_path: str = image_path
         self.mask_path: str | None = mask_path
 
-    def write_patches(self, dest_path: str, splits: int = 8, store_empty: bool = False) -> None:
+    def write_patches(self, dest: str, splits: int = 8, store_empty: bool = False) -> None:
         """
         Split image and corresponding mask into patches and store the result
 
         Split the image and the corresponding mask, if it is defined, into a number of patches
-        defined by `splits`, and store the result in `dest_path`, under subdirectories `images`
+        defined by `splits`, and store the result in `dest`, under subdirectories `images`
         and `masks`, respectively.
 
-        :param dest_path: Destination directory for the patches
+        :param dest: Destination directory for the patches
         :param splits: Number of patches to split the image into
         :param store_empty: If a mask is defined, store patches also for which no mask exists
         """
-        logger.info(f"Splitting {self.image_path} into {splits} patches and storing them in "
-                    f"{dest_path}/images")
+        logger.debug(f"Splitting {self.image_path} into {splits} patches and storing them in "
+                     f"{dest}/images")
         if self.mask_path is not None:
-            logger.info(f"Also splitting {self.mask_path} and storing into {dest_path}/masks")
-            logger.info(f"{'Storing' if store_empty else 'Not storing'} empty masks")
+            logger.debug(f"Also splitting {self.mask_path} and storing into {dest}/masks")
+            logger.debug(f"{'Storing' if store_empty else 'Not storing'} empty masks")
 
         image_patches: list[Image.Image]
         # NOTE: Using Sequence because of a bug with list[x | None] in MyPy
@@ -72,10 +72,10 @@ class Patches:
                 continue
 
             logger.debug(f"Writing patch {idx} for {self.image_path}")
-            self._write_patch(join(dest_path, "images", patch_filename), image_patch)
+            self._write_patch(join(dest, "images", patch_filename), image_patch)
             if mask_patch is not None:
                 logger.debug(f"Writing patch {idx} for {self.mask_path}")
-                self._write_patch(join(dest_path, "masks", patch_filename), mask_patch)
+                self._write_patch(join(dest, "masks", patch_filename), mask_patch)
 
     @staticmethod
     def _write_patch(path: str, patch: Image.Image) -> None:

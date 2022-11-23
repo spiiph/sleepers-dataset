@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dataset"
+description = ''
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Henrik Leijon", email = "henrik.leijon@trafikverket.se" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "Pillow>=9.3",
+  "opencv-python-headless>=4.6",
+  "numpy>=1.23"
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+tests = [
+  "pylint",
+  "mypy",
+  "pytest",
+  "pytest-cov"
+]
+
+[project.urls]
+Documentation = "https://github.com/spiiph/sleepers-dataset#README.md"
+Issues = "https://github.com/spiiph/sleepers-dataset/issues"
+Source = "https://github.com/spiiph/sleepers-dataset"
+
+[project.scripts]
+hello-world = "dataset.console:hello_world"
+create-patches = "dataset.console:create_patches"
+
+[tool.hatch.version]
+path = "dataset/__about__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pylint",
+  "mypy",
+  "pytest",
+  "pytest-cov",
+]
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=dataset --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["37", "38", "39", "310", "311"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "dataset/__about__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.pylint.'BASIC']
+good-names = [
+  "i",
+  "j",
+  "k",
+  "x",
+  "y",
+  "d",
+  "e",
+  "f"
+]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+  "missing-module-docstring",
+  "logging-fstring-interpolation"
+]
+
+[tool.pylint.'DESIGN']
+min-public-methods=1
+
+[tool.pylint.'TYPECHECK']
+generated-members = [
+  "cv2"
+]
+

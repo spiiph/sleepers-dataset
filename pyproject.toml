@@ -36,7 +36,8 @@ tests = [
   "flake8",
   "flake8-pyproject",
   "pytest",
-  "pytest-cov"
+  "pytest-cov",
+  "types-Pillow"
 ]
 
 [project.urls]
@@ -58,10 +59,14 @@ dependencies = [
   "flake8-pyproject",
   "pytest",
   "pytest-cov",
+  "types-Pillow"
 ]
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=dataset --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
+lint = "pylint dataset/*.py"
+style = "flake8 dataset/*.py"
+types = "mypy dataset/*.py"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["37", "38", "39", "310", "311"]

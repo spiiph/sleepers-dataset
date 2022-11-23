@@ -138,3 +138,13 @@ class Mask:
                       lineType=cv2.FILLED)
 
         return Image.fromarray(result)
+
+    def save_polygons(self, dest: str, normalize: bool = True) -> None:
+        """
+        Save the polygons to file as text
+
+        :param dest: Path to destination file
+        """
+        with open(dest, "w", encoding="utf-8") as f:
+            for polygon in self.to_polygons(normalize=normalize):
+                f.write(f"{' '.join(map(str, polygon))}\n")

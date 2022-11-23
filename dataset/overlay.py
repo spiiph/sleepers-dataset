@@ -9,7 +9,7 @@ logger = logging.getLogger("dataset.overlay")
 
 def save_image_with_mask(image: str | Image.Image,
                          mask: str | Mask,
-                         out_path: str
+                         dest: str
                          ) -> Image.Image:
     """
     Save an image with a mask overlayed.
@@ -19,7 +19,7 @@ def save_image_with_mask(image: str | Image.Image,
 
     :param image_path: Path to the image file.
     :param mask_path: Path to the image file with the binary mask.
-    :param out_path: Path to store the new image with the mask overlayed.
+    :param dest: Path to store the new image with the mask overlayed.
     :return: Image with the mask overlayed.
     """
     if isinstance(image, str):
@@ -29,16 +29,14 @@ def save_image_with_mask(image: str | Image.Image,
         mask = Mask(mask)
 
     image_with_mask = mask.overlay(image, colour=(255, 0, 0))
-
-    logger.info(f"Saving image with mask to {out_path}")
-    image_with_mask.save(out_path)
+    image_with_mask.save(dest)
 
     return image_with_mask
 
 
 def save_image_with_polygons(image: str | Image.Image,
                              mask: str | Mask,
-                             out_path: str
+                             dest: str
                              ) -> Image.Image:
     """
     Save an image with polygons overlayed.
@@ -58,8 +56,6 @@ def save_image_with_polygons(image: str | Image.Image,
         mask = Mask(mask)
 
     image_with_polygons = mask.overlay_polygons(image, colour=(255, 0, 0))
-
-    logger.info(f"Saving image with polygons to {out_path}")
-    image_with_polygons.save(out_path)
+    image_with_polygons.save(dest)
 
     return image_with_polygons

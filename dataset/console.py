@@ -13,7 +13,7 @@ from PIL import Image
 from dataset.overlay import save_image_with_mask, save_image_with_polygons
 from dataset.mask import Mask
 from dataset.patches import Patches
-from dataset.manage import split
+from dataset.manage import split, to_yolo
 
 
 LOG_LEVELS = list(logging._nameToLevel.keys())[:-1]  # pylint: disable=protected-access
@@ -131,12 +131,13 @@ def overlay_image(args: argparse.Namespace) -> bool:
             logger.debug(f"Creating missing directory {join(args.dest, subdir)}")
             os.makedirs(join(args.dest, subdir))
 
-    save_image_with_mask(image,
-                         mask,
-                         join(args.dest, "images_with_masks", basename(args.image)))
-    save_image_with_polygons(image,
-                             mask,
-                             join(args.dest, "images_with_polygons", basename(args.image)))
+    mask_dest = join(args.dest, "mask_overlays", basename(args.image))
+    logger.info(f"Saving image with mask to {mask_dest}")
+    save_image_with_mask(image, mask, mask_dest)
+
+    polygon_dest = join(args.dest, "polygon_overlays", basename(args.image))
+    logger.info(f"Saving image with mask to {polygon_dest}")
+    save_image_with_polygons(image, mask, polygon_dest)
 
     return True
 
@@ -159,7 +160,7 @@ def split_dataset(args: argparse.Namespace) -> bool:
 
     for subdir in [join(args.source, d) for d in ["images", "masks", "splits"]]:
         if not isdir(subdir):
-            logger.fatal(f"Source sub-directory {subdir} does not exist.")
+            logger.fatal(f"Source subdirectory {subdir} does not exist.")
             return False
 
     if exists(args.dest):
@@ -184,6 +185,36 @@ def split_dataset(args: argparse.Namespace) -> bool:
         "test": test
     }
     split(join(args.source, "images"), join(args.source, "masks"), args.dest, splits)
+
+    return True
+
+
+def convert_to_yolo(args: argparse.Namespace) -> bool:
+    """
+    Convert an image dataset with binary masks to a dataset for YOLO segmentation
+
+    :param args: Console application arguments
+    :return: Status indicating if the function succeeded or failed
+    """
+    logger = setup_logger("dataset", level=args.log_level)
+    logger.info("Running yolo with the following parameters:")
+    logger.info(f"  source: {args.source}")
+    logger.info(f"  dest: {args.dest}")
+    logger.info(f"  patches: {args.patches}")
+
+    if not isdir(args.source):
+        logger.fatal(f"Source directory {args.source} does not exist.")
+        return False
+
+    for subdir in [join(args.source, d) for d in ["train", "val"]]:
+        if not isdir(subdir):
+            logger.fatal(f"Source subdirectory {subdir} does not exist.")
+            return False
+
+    if exists(args.dest):
+        logger.warning(f"Destination directory {args.dest} exists. Trying to continue conversion.")
+
+    to_yolo(args.source, args.dest, subdirs=("train", "val"), splits=args.patches)
 
     return True
 
@@ -281,10 +312,10 @@ def main() -> None:
         description=textwrap.dedent("""
         Split a dataset into training, validation, and test datasets
 
-        The split expects that the source directory contains the sub-directories 'images',
-        'masks', and 'splits'. 'images' contains the images of the dataset while 'masks' contains
-        the corresponding binary masks. 'splits' contains the three text files 'train.txt',
-        'val.txt', and 'test.txt' describing how the dataset should be split.
+        The split command expects that the source directory contains the sub-directories
+        'images', 'masks', and 'splits'. 'images' contains the images of the dataset while
+        'masks' contains the corresponding binary masks. 'splits' contains the three text files
+        'train.txt', 'val.txt', and 'test.txt' describing how the dataset should be split.
         """)
     )
     split_parser.add_argument(
@@ -297,6 +328,43 @@ def main() -> None:
     )
     split_parser.set_defaults(func=split_dataset)
     split_parser.add_argument(*log_level.args, **log_level.kwargs)
+
+    # Set up the yolo parser
+    yolo_parser = subparsers.add_parser(
+        "yolo",
+        help="Run the yolo command",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent("""
+        Convert a dataset with binary masks to polygon labels
+
+        The yolo command converts a dataset of images and masks into one of images and labels,
+        where label files are text files containing class ID and normalized polygon coordinates.
+        It first splits images and masks into patches to reduce the image width and allow for a
+        larger resolution to be used during training.
+
+        The yolo command expects that the source directory contains the subdirectories 'train'
+        and 'val', which in turn contain the subdirectories 'images' and 'masks'. In the
+        destination directory, it creates the corresponding subdirectories 'train' and 'val', and
+        under each of these the subdirectories 'images', 'masks', 'labels', 'mask_overlays', and
+        'polygon_overlays'.
+        """)
+    )
+    yolo_parser.add_argument(
+        "source",
+        help="Source directory"
+    )
+    yolo_parser.add_argument(
+        "dest",
+        help="Destination directory"
+    )
+    yolo_parser.add_argument(
+        "--patches", "-p",
+        type=int,
+        default=8,
+        help="Number of patches to split each image into"
+    )
+    yolo_parser.set_defaults(func=convert_to_yolo)
+    yolo_parser.add_argument(*log_level.args, **log_level.kwargs)
 
     # Parse arguments
     args = parser.parse_args()

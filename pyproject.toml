@@ -24,7 +24,8 @@ classifiers = [
 dependencies = [
   "Pillow>=9.3",
   "opencv-python-headless>=4.6",
-  "numpy>=1.23"
+  "numpy>=1.23",
+  "pyyaml>=6.0"
 ]
 
 dynamic = ["version"]
@@ -37,7 +38,8 @@ tests = [
   "flake8-pyproject",
   "pytest",
   "pytest-cov",
-  "types-Pillow"
+  "types-pillow",
+  "types-pyyaml"
 ]
 
 [project.urls]
@@ -59,7 +61,8 @@ dependencies = [
   "flake8-pyproject",
   "pytest",
   "pytest-cov",
-  "types-Pillow"
+  "types-Pillow",
+  "types-pyyaml"
 ]
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=dataset --cov=tests {args}"

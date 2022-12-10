@@ -15,7 +15,7 @@ class Mask:
     NOTE: This class can only handle images with two colours, in palette mode.
     """
 
-    def __init__(self, mask_path: str):
+    def __init__(self, mask_path: str | None = None, data: np.ndarray | None = None):
         """
         Initialize a Mask object
 
@@ -23,12 +23,22 @@ class Mask:
         """
         logger.debug(f"Creating Mask object with mask_path = {mask_path}")
 
-        self.mask_path: str = mask_path
+        assert mask_path is not None or data is not None, "Both mask_path and data cannot be None"
+
+        self._mask_path: str
         self._data: np.ndarray
-        self._data_loaded: bool = False
+        self._data_loaded: bool
         self._contours: list[np.ndarray]
         self._contours_loaded: bool = False
         self._norm: np.ndarray
+
+        if mask_path is not None:
+            self._mask_path = mask_path
+            self._data_loaded = False
+
+        if data is not None:
+            self._data = data
+            self._data_loaded = True
 
     @property
     def data(self) -> np.ndarray:
@@ -50,7 +60,7 @@ class Mask:
         :return: The image data of the mask as a NumPy array
         """
         if not self._data_loaded:
-            self._data = np.asarray(Image.open(self.mask_path))
+            self._data = np.asarray(Image.open(self._mask_path))
             self._norm = np.array([self._data.shape[1], self._data.shape[0]])
 
         return self._data
@@ -81,10 +91,21 @@ class Mask:
         :param normalize: Normalize the polygons to the width and height of the image
         :return: List of flat lists of the format [class, x1, y1, x2, y2, ...]
         """
+        # Convert contours to polygons and prepend a 0 for the class label. Only accept contours
+        # that have at least 3 points.
         return [
-            [0] + contour.flatten().tolist()
-            for contour in self.to_contours(normalize=normalize)
+            [0] + c.flatten().tolist()
+            for c in self.to_contours(normalize=normalize)
+            if c.shape[0] >= 3
         ]
+
+    def has_polygons(self) -> bool:
+        """
+        Check that the mask contains valid polygons
+
+        :return: True if the mask contains valid polygons, otherwise False
+        """
+        return self.to_polygons(normalize=False) != []
 
     def overlay(self,
                 image: Image.Image,
@@ -145,6 +166,11 @@ class Mask:
 
         :param dest: Path to destination file
         """
-        with open(dest, "w", encoding="utf-8") as f:
-            for polygon in self.to_polygons(normalize=normalize):
-                f.write(f"{' '.join(map(str, polygon))}\n")
+        polygons = self.to_polygons(normalize=normalize)
+
+        if polygons:
+            with open(dest, "w", encoding="utf-8") as f:
+                for polygon in polygons:
+                    f.write(f"{' '.join(map(str, polygon))}\n")
+        else:
+            logger.warning("Mask contains no valid polygons")

@@ -7,6 +7,8 @@ import numpy as np
 
 from PIL import Image
 
+from dataset.mask import Mask
+
 
 logger = logging.getLogger("dataset.patches")
 
@@ -49,33 +51,34 @@ class Patches:
 
         image_patches: list[Image.Image]
         # NOTE: Using Sequence because of a bug with list[x | None] in MyPy
-        mask_patches: Sequence[Image.Image | None]
-        empty_masks: list[bool]
+        mask_patches: Sequence[Image.Image]
+        empty_masks: list[bool] = [False] * splits
 
         logger.debug(f"Splitting image into {splits} patches")
-        image_patches, _ = self._split_image(Image.open(self.image_path), splits)
+        image_patches = self._split_image(Image.open(self.image_path), splits)
         if self.mask_path is not None:
             logger.debug(f"Splitting mask into {splits} patches")
-            mask_patches, empty_masks = self._split_image(Image.open(self.mask_path), splits)
-        else:
-            logger.debug("Constructing empty masks")
-            mask_patches = [None] * len(image_patches)
-            empty_masks = [False] * len(image_patches)
+            mask_patches = self._split_image(Image.open(self.mask_path), splits)
+            empty_masks = [
+                not Mask(data=np.asarray(patch)).has_polygons()
+                for patch in mask_patches
+            ]
 
         base, ext = splitext(basename(self.image_path))
         for image_patch, mask_patch, mask_is_empty, idx in \
                 zip(image_patches, mask_patches, empty_masks, range(0, len(image_patches))):
             patch_filename = f"{base}_{idx}{ext}"
 
-            if mask_is_empty and not store_empty:
-                logger.debug(f"Empty mask for image {self.image_path} at index {idx}. Skipping.")
-                continue
-
-            logger.debug(f"Writing patch {idx} for {self.image_path}")
-            self._write_patch(join(dest, "images", patch_filename), image_patch)
-            if mask_patch is not None:
+            if self.mask_path is None:
+                logger.debug(f"Writing patch {idx} for {self.image_path}")
+                self._write_patch(join(dest, "images", patch_filename), image_patch)
+            elif not mask_is_empty or store_empty:
+                logger.debug(f"Writing patch {idx} for {self.image_path}")
+                self._write_patch(join(dest, "images", patch_filename), image_patch)
                 logger.debug(f"Writing patch {idx} for {self.mask_path}")
                 self._write_patch(join(dest, "masks", patch_filename), mask_patch)
+            else:
+                logger.debug(f"Empty mask for image {self.image_path} at index {idx}. Skipping.")
 
     @staticmethod
     def _write_patch(path: str, patch: Image.Image) -> None:
@@ -83,7 +86,7 @@ class Patches:
         patch.save(path)
 
     @staticmethod
-    def _split_image(image: Image.Image, splits: int) -> tuple[list[Image.Image], list[bool]]:
+    def _split_image(image: Image.Image, splits: int) -> list[Image.Image]:
         logger.debug(f"Image size is {image.width} x {image.height} and mode is {image.mode}")
 
         # Convert the image to a NumPy array and determine the patch width
@@ -97,9 +100,6 @@ class Patches:
             for x in range(0, image_data.shape[1], patch_width)
         ]
 
-        # Determine empty status of the patches
-        is_empty = [not patch.any() for patch in patches_data]
-
         # Convert back to image objects
         patches = [Image.fromarray(patch, mode=image.mode) for patch in patches_data]
 
@@ -108,4 +108,4 @@ class Patches:
             for patch in patches:
                 patch.putpalette(image.getpalette())  # type: ignore
 
-        return patches, is_empty
+        return patches

@@ -13,7 +13,7 @@ from PIL import Image
 from dataset.overlay import save_image_with_mask, save_image_with_polygons
 from dataset.mask import Mask
 from dataset.patches import Patches
-from dataset.manage import split, to_yolo
+from dataset.manage import split, to_yolo, check_labels
 
 
 LOG_LEVELS = list(logging._nameToLevel.keys())[:-1]  # pylint: disable=protected-access
@@ -219,6 +219,26 @@ def convert_to_yolo(args: argparse.Namespace) -> bool:
     return True
 
 
+def check_polygon_labels(args: argparse.Namespace) -> bool:
+    """
+    Check the validity of the polygon labels in a directory
+
+    :param args: Console application arguments
+    :return: Status indicating if the function succeeded or failed
+    """
+    logger = setup_logger("dataset", level=args.log_level)
+    logger.info("Running check-labels with the following parameters:")
+    logger.info(f"  source: {args.source}")
+
+    if not isdir(args.source):
+        logger.fatal(f"Source directory {args.source} does not exist.")
+        return False
+
+    check_labels(args.source)
+
+    return True
+
+
 @dataclass
 class Argument:
     """
@@ -365,6 +385,26 @@ def main() -> None:
     )
     yolo_parser.set_defaults(func=convert_to_yolo)
     yolo_parser.add_argument(*log_level.args, **log_level.kwargs)
+
+    # Set up the check labels parser
+    check_parser = subparsers.add_parser(
+        "check-labels",
+        help="Run the check-labels command",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent("""
+        Check the validity of the polygon labels in a directory
+
+        Check that the label files in a directory contains at least one polygon, that the first
+        value of each line is the class label, that the polygons consist of 3 or more points, and
+        that the number of coordinate values are even.
+        """)
+    )
+    check_parser.add_argument(
+        "source",
+        help="Source directory"
+    )
+    check_parser.set_defaults(func=check_polygon_labels)
+    check_parser.add_argument(*log_level.args, **log_level.kwargs)
 
     # Parse arguments
     args = parser.parse_args()

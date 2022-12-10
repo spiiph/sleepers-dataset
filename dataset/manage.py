@@ -179,3 +179,51 @@ def to_yolo(src: str,
 
     with open(join(dest, "data.yaml"), "w", encoding="utf-8") as f:
         yaml.dump(dataset, f)
+
+
+def check_labels(src: str) -> bool:
+    """
+    Check the segmentation labels in the source directory
+
+    Load all text files in the source directory and check that they contain at least one polygon,
+    and that each polygon starts with a 0, contains an even number of coordinate values, and has
+    at least three points.
+
+    :param src: Path to source directory
+    :return: Status indicating whether any problems were found
+    """
+    file_count = 0
+
+    for filename in os.listdir(src):
+        path = join(src, filename)
+        has_labels = False
+        with open(path, encoding="utf-8") as f:
+            for idx, line in enumerate(f):
+                has_labels = True
+                has_warning = False
+                values = line.split(" ")
+                label = int(values.pop(0))
+                points = [float(e) for e in values]
+
+                if label != 0:
+                    logger.warning(f"{path}[{idx}]: Class is not 0")
+                    has_warning = True
+                if len(points) < 6:
+                    logger.warning(f"{path}[{idx}]: Polygon only has {len(points) // 2} points")
+                    logger.debug(f"{path}[{idx}]: {line}")
+                    has_warning = True
+                if len(points) % 2 != 0:
+                    logger.warning(f"{path}[{idx}]: Polygon has an odd number of coordinate values")
+                    has_warning = True
+
+        if not has_labels:
+            logger.warning(f"{path}: File contains no labels")
+            has_warning = True
+
+        if has_warning:
+            file_count += 1
+
+    if file_count > 0:
+        logger.warning(f"{file_count} files have warnings")
+
+    return file_count == 0
